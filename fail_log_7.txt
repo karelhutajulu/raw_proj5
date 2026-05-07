@@ -1,0 +1,237 @@
+Benchmark setup
+	Black-Scholes options: 81920
+	Sparse A (CSR): 2048 x 2048, nnz=24309
+	ReLU: vector length=1024000
+	Bitwise: vector length=1024000
+	MatMul: n=512
+	Trace Replay: records=65536, trace_length=1048576
+	Graph: node_count=1024000, avg_degree=8
+	GRFF: feature size=1024000
+	Image Proc: 1024 x 1000
+	Filter Gradient: 1024 x 1024
+
+Running Benchmarks...
+-----------------------------------------------------------------------
+Benchmark                Status          Nanoseconds     Speedup
+-----------------------------------------------------------------------
+	DEBUG: 0-th measurement: 4892917 ns
+	DEBUG: 1-th measurement: 4700167 ns
+	DEBUG: 2-th measurement: 4901000 ns
+	DEBUG: 3-th measurement: 10929417 ns
+	DEBUG: 4-th measurement: 5862958 ns
+	DEBUG: 5-th measurement: 5855209 ns
+	DEBUG: 6-th measurement: 6220042 ns
+	DEBUG: 7-th measurement: 4652209 ns
+	DEBUG: 8-th measurement: 5486917 ns
+	DEBUG: 9-th measurement: 6013959 ns
+	DEBUG: 10-th measurement: 4293542 ns
+	DEBUG: 11-th measurement: 5561625 ns
+	DEBUG: 12-th measurement: 5105542 ns
+	DEBUG: 13-th measurement: 4292042 ns
+	DEBUG: 14-th measurement: 5558000 ns
+	DEBUG: 15-th measurement: 4332000 ns
+	DEBUG: 16-th measurement: 5811375 ns
+	DEBUG: 17-th measurement: 5199167 ns
+	DEBUG: 18-th measurement: 5131500 ns
+	DEBUG: 19-th measurement: 4599375 ns
+	BlkSchls_check passed: n=81920, max_rel_err=0, max_abs_err=0 at idx=0 (call)
+Black-Scholes (Student)  [1;32mPASSED[0m        5469948 ns      0.878x (SLOWER)
+	DEBUG: 0-th measurement: 125181625 ns
+	DEBUG: 1-th measurement: 83776750 ns
+	DEBUG: 2-th measurement: 80039958 ns
+	DEBUG: 3-th measurement: 92228208 ns
+	DEBUG: 4-th measurement: 77409292 ns
+	DEBUG: 5-th measurement: 82849292 ns
+	DEBUG: 6-th measurement: 107669375 ns
+	DEBUG: 7-th measurement: 94784375 ns
+	DEBUG: 8-th measurement: 122945042 ns
+	DEBUG: 9-th measurement: 96630291 ns
+	DEBUG: 10-th measurement: 79561625 ns
+	DEBUG: 11-th measurement: 82975500 ns
+	DEBUG: 12-th measurement: 110671250 ns
+	DEBUG: 13-th measurement: 133420958 ns
+	DEBUG: 14-th measurement: 89796875 ns
+	DEBUG: 15-th measurement: 103583042 ns
+	DEBUG: 16-th measurement: 100985083 ns
+	DEBUG: 17-th measurement: 92745625 ns
+	DEBUG: 18-th measurement: 100751333 ns
+	DEBUG: 19-th measurement: 102832042 ns
+	DEBUG: sparse_spmm mismatch at 1331132: ref=-2.956390380859375e-05 stu=-3.1828880310058594e-05 err=2.2649765014648438e-06 thr=2.029563903808594e-06
+Sparse SpMM (Student)    [1;31mFAILED[0m            N/A         N/A
+  Error: Results do not match naive implementation!
+	DEBUG: 0-th measurement: 2575875 ns
+	DEBUG: 1-th measurement: 211833 ns
+	DEBUG: 2-th measurement: 220792 ns
+	DEBUG: 3-th measurement: 285750 ns
+	DEBUG: 4-th measurement: 284625 ns
+	DEBUG: 5-th measurement: 285292 ns
+	DEBUG: 6-th measurement: 284166 ns
+	DEBUG: 7-th measurement: 284417 ns
+	DEBUG: 8-th measurement: 285166 ns
+	DEBUG: 9-th measurement: 215583 ns
+	DEBUG: 10-th measurement: 297625 ns
+	DEBUG: 11-th measurement: 352875 ns
+	DEBUG: 12-th measurement: 224875 ns
+	DEBUG: 13-th measurement: 232875 ns
+	DEBUG: 14-th measurement: 285500 ns
+	DEBUG: 15-th measurement: 255333 ns
+	DEBUG: 16-th measurement: 284292 ns
+	DEBUG: 17-th measurement: 225750 ns
+	DEBUG: 18-th measurement: 225833 ns
+	DEBUG: 19-th measurement: 284000 ns
+	DEBUG: relu_check passed. max_rel=0 at i=0
+ReLU (Student)           [1;32mPASSED[0m         380122 ns      1.447x
+	DEBUG: 0-th measurement: 1407583 ns
+	DEBUG: 1-th measurement: 182792 ns
+	DEBUG: 2-th measurement: 207833 ns
+	DEBUG: 3-th measurement: 171917 ns
+	DEBUG: 4-th measurement: 145042 ns
+	DEBUG: 5-th measurement: 180625 ns
+	DEBUG: 6-th measurement: 146292 ns
+	DEBUG: 7-th measurement: 145125 ns
+	DEBUG: 8-th measurement: 181167 ns
+	DEBUG: 9-th measurement: 180875 ns
+	DEBUG: 10-th measurement: 180792 ns
+	DEBUG: 11-th measurement: 180417 ns
+	DEBUG: 12-th measurement: 142500 ns
+	DEBUG: 13-th measurement: 181833 ns
+	DEBUG: 14-th measurement: 229292 ns
+	DEBUG: 15-th measurement: 261417 ns
+	DEBUG: 16-th measurement: 180875 ns
+	DEBUG: 17-th measurement: 559208 ns
+	DEBUG: 18-th measurement: 180583 ns
+	DEBUG: 19-th measurement: 194125 ns
+	DEBUG: bitwise_check passed. max_abs_diff=0 at i=0
+Bitwise (Student)        [1;32mPASSED[0m         262014 ns      0.954x
+	DEBUG: 0-th measurement: 58527709 ns
+	DEBUG: 1-th measurement: 75673958 ns
+	DEBUG: 2-th measurement: 61209625 ns
+	DEBUG: 3-th measurement: 72641583 ns
+	DEBUG: 4-th measurement: 62694875 ns
+	DEBUG: 5-th measurement: 69303375 ns
+	DEBUG: 6-th measurement: 45127083 ns
+	DEBUG: 7-th measurement: 53096500 ns
+	DEBUG: 8-th measurement: 58610125 ns
+	DEBUG: 9-th measurement: 61418750 ns
+	DEBUG: 10-th measurement: 54233416 ns
+	DEBUG: 11-th measurement: 65426708 ns
+	DEBUG: 12-th measurement: 62354667 ns
+	DEBUG: 13-th measurement: 49340834 ns
+	DEBUG: 14-th measurement: 62548083 ns
+	DEBUG: 15-th measurement: 55140458 ns
+	DEBUG: 16-th measurement: 55880959 ns
+	DEBUG: 17-th measurement: 65362500 ns
+	DEBUG: 18-th measurement: 139528709 ns
+	DEBUG: 19-th measurement: 55517458 ns
+	DEBUG: matmul_check passed. max_rel=0 at index 0
+MatMul (Student)         [1;32mPASSED[0m       64181868 ns      1.371x
+	DEBUG: 0-th measurement: 5226416 ns
+	DEBUG: 1-th measurement: 5638833 ns
+	DEBUG: 2-th measurement: 2592458 ns
+	DEBUG: 3-th measurement: 4928750 ns
+	DEBUG: 4-th measurement: 3323541 ns
+	DEBUG: 5-th measurement: 12089333 ns
+	DEBUG: 6-th measurement: 4385750 ns
+	DEBUG: 7-th measurement: 4386167 ns
+	DEBUG: 8-th measurement: 3496500 ns
+	DEBUG: 9-th measurement: 3144042 ns
+	DEBUG: 10-th measurement: 5281750 ns
+	DEBUG: 11-th measurement: 6897291 ns
+	DEBUG: 12-th measurement: 4065666 ns
+	DEBUG: 13-th measurement: 9658791 ns
+	DEBUG: 14-th measurement: 3692500 ns
+	DEBUG: 15-th measurement: 3880792 ns
+	DEBUG: 16-th measurement: 3049209 ns
+	DEBUG: 17-th measurement: 3120334 ns
+	DEBUG: 18-th measurement: 3974875 ns
+	DEBUG: 19-th measurement: 3386375 ns
+Trace Replay (Student)   [1;32mPASSED[0m        4810968 ns      0.707x (SLOWER)
+	DEBUG: 0-th measurement: 15992375 ns
+	DEBUG: 1-th measurement: 2138375 ns
+	DEBUG: 2-th measurement: 3703333 ns
+	DEBUG: 3-th measurement: 1977334 ns
+	DEBUG: 4-th measurement: 1358375 ns
+	DEBUG: 5-th measurement: 1973250 ns
+	DEBUG: 6-th measurement: 1944833 ns
+	DEBUG: 7-th measurement: 1789417 ns
+	DEBUG: 8-th measurement: 1739958 ns
+	DEBUG: 9-th measurement: 1722416 ns
+	DEBUG: 10-th measurement: 1602917 ns
+	DEBUG: 11-th measurement: 1725542 ns
+	DEBUG: 12-th measurement: 2390750 ns
+	DEBUG: 13-th measurement: 2166125 ns
+	DEBUG: 14-th measurement: 1772208 ns
+	DEBUG: 15-th measurement: 1925125 ns
+	DEBUG: 16-th measurement: 3131917 ns
+	DEBUG: 17-th measurement: 2718583 ns
+	DEBUG: 18-th measurement: 1809375 ns
+	DEBUG: 19-th measurement: 1800375 ns
+	DEBUG: graph stu=4193953654838 ref=4193953654838 err=0 rel=0
+Graph (Student)          [1;32mPASSED[0m        2769129 ns      1.806x
+	DEBUG: 0-th measurement: 10483250 ns
+	DEBUG: 1-th measurement: 5933084 ns
+	DEBUG: 2-th measurement: 2438500 ns
+	DEBUG: 3-th measurement: 2470791 ns
+	DEBUG: 4-th measurement: 2452583 ns
+	DEBUG: 5-th measurement: 9649583 ns
+	DEBUG: 6-th measurement: 6142334 ns
+	DEBUG: 7-th measurement: 2586917 ns
+	DEBUG: 8-th measurement: 2479583 ns
+	DEBUG: 9-th measurement: 2579250 ns
+	DEBUG: 10-th measurement: 2490625 ns
+	DEBUG: 11-th measurement: 2440750 ns
+	DEBUG: 12-th measurement: 3088875 ns
+	DEBUG: 13-th measurement: 3746542 ns
+	DEBUG: 14-th measurement: 3257792 ns
+	DEBUG: 15-th measurement: 2434833 ns
+	DEBUG: 16-th measurement: 3169292 ns
+	DEBUG: 17-th measurement: 2857291 ns
+	DEBUG: 18-th measurement: 3330458 ns
+	DEBUG: 19-th measurement: 2432834 ns
+GRFF (Student)           [1;32mPASSED[0m        3823258 ns      2.223x
+	DEBUG: 0-th measurement: 63878000 ns
+	DEBUG: 1-th measurement: 50429917 ns
+	DEBUG: 2-th measurement: 50843208 ns
+	DEBUG: 3-th measurement: 47158792 ns
+	DEBUG: 4-th measurement: 48263542 ns
+	DEBUG: 5-th measurement: 50644167 ns
+	DEBUG: 6-th measurement: 47550333 ns
+	DEBUG: 7-th measurement: 40734750 ns
+	DEBUG: 8-th measurement: 53798541 ns
+	DEBUG: 9-th measurement: 48069917 ns
+	DEBUG: 10-th measurement: 47251459 ns
+	DEBUG: 11-th measurement: 61664500 ns
+	DEBUG: 12-th measurement: 46497750 ns
+	DEBUG: 13-th measurement: 45235250 ns
+	DEBUG: 14-th measurement: 56746708 ns
+	DEBUG: 15-th measurement: 48772083 ns
+	DEBUG: 16-th measurement: 47966417 ns
+	DEBUG: 17-th measurement: 52120083 ns
+	DEBUG: 18-th measurement: 80739667 ns
+	DEBUG: 19-th measurement: 53416500 ns
+DEBUG: image_proc_check passed. size=1024000
+Image Proc (Student)     [1;32mPASSED[0m       52089079 ns      0.826x (SLOWER)
+	DEBUG: 0-th measurement: 29483000 ns
+	DEBUG: 1-th measurement: 13753167 ns
+	DEBUG: 2-th measurement: 15064750 ns
+	DEBUG: 3-th measurement: 13147833 ns
+	DEBUG: 4-th measurement: 15505666 ns
+	DEBUG: 5-th measurement: 13013583 ns
+	DEBUG: 6-th measurement: 19708000 ns
+	DEBUG: 7-th measurement: 14041792 ns
+	DEBUG: 8-th measurement: 17733625 ns
+	DEBUG: 9-th measurement: 11353250 ns
+	DEBUG: 10-th measurement: 13067459 ns
+	DEBUG: 11-th measurement: 13088541 ns
+	DEBUG: 12-th measurement: 13493875 ns
+	DEBUG: 13-th measurement: 15207875 ns
+	DEBUG: 14-th measurement: 12925709 ns
+	DEBUG: 15-th measurement: 27350875 ns
+	DEBUG: 16-th measurement: 15695084 ns
+	DEBUG: 17-th measurement: 15066417 ns
+	DEBUG: 18-th measurement: 12697250 ns
+	DEBUG: 19-th measurement: 17706959 ns
+DEBUG: filter_gradient stu=783648.9 ref=783648.9 err=0 rel=0
+Filter Gradient (Student)[1;32mPASSED[0m       15955235 ns      1.567x
+
+Geometric mean speedup: N/A
