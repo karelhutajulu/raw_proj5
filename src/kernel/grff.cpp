@@ -78,42 +78,53 @@ void naive_grff(grff_args& args) {
 // TODO: Student Implementation
 // -------------------------------------------------------------------------
 void stu_grff(grff_args& args) {
-    size_t n = args.a_features.size();
-    float sum_a = 0.0f;
-    std::vector<float> A_prime(n);
-    const float* a = args.a_features.data();
-    const float* b = args.b_features.data();
-    const float* c = args.c_features.data();
-    float* f_out = args.f_output.data();
+    const size_t n = args.a_features.size();
+    if (n == 0) return;
 
-    // Loop 1
+    static thread_local std::vector<float> a_prime;
+    a_prime.resize(n);
+
+    const float *__restrict__ a = args.a_features.data();
+    const float *__restrict__ b = args.b_features.data();
+    const float *__restrict__ c = args.c_features.data();
+    float *__restrict__ out = args.f_output.data();
+    float *__restrict__ ap_data = a_prime.data();
+
+    float sum_a = 0.0f;
     for (size_t i = 0; i < n; ++i) {
-        float ab = a[i] * b[i];
-        float g = 0.5f * (ab / (1.0f + std::abs(ab)) + 1.0f);
-        float ap = a[i] + g;
-        A_prime[i] = ap;
+        const float ab = a[i] * b[i];
+        const float g = 0.5f * (ab / (1.0f + std::abs(ab)) + 1.0f);
+        const float ap = a[i] + g;
+        ap_data[i] = ap;
         sum_a += ap;
     }
-    float avg_a = sum_a / static_cast<float>(n);
+    const float avg_a = sum_a / static_cast<float>(n);
 
-    // Loop 2
-    float prev_ap = A_prime[0];
-    for (size_t i = 0; i < n; ++i) {
-        float ap = A_prime[i];
-        float smooth_a;
-        if (i == 0) {
-            smooth_a = ap;
-        } else {
-            smooth_a = (ap + prev_ap) * 0.5f;
-            prev_ap = ap;
-        }
-        float g = ap - a[i];
-        float b_prime = b[i] * (1.0f - g) * avg_a;
-        float c_prime = c[i] + (smooth_a / (1.0f + std::abs(smooth_a)));
-        float h = smooth_a * c_prime;
-        float e = (h + b_prime) / (1.0f + std::abs(smooth_a));
-        float result = c_prime - e;
-        f_out[i] = std::max(result, 0.0f);
+    {
+        const float ap = ap_data[0];
+        const float smooth = ap;
+        const float g = ap - a[0];
+        const float b_prime = b[0] * (1.0f - g) * avg_a;
+        const float smooth_abs = std::abs(smooth);
+        const float inv_denom = 1.0f / (1.0f + smooth_abs);
+        const float c_prime = c[0] + smooth * inv_denom;
+        const float e = (smooth * c_prime + b_prime) * inv_denom;
+        out[0] = std::max(c_prime - e, 0.0f);
+    }
+
+    float prev_ap = ap_data[0];
+    for (size_t i = 1; i < n; ++i) {
+        const float ap = ap_data[i];
+        const float smooth = (ap + prev_ap) * 0.5f;
+        prev_ap = ap;
+
+        const float g = ap - a[i];
+        const float b_prime = b[i] * (1.0f - g) * avg_a;
+        const float smooth_abs = std::abs(smooth);
+        const float inv_denom = 1.0f / (1.0f + smooth_abs);
+        const float c_prime = c[i] + smooth * inv_denom;
+        const float e = (smooth * c_prime + b_prime) * inv_denom;
+        out[i] = std::max(c_prime - e, 0.0f);
     }
 }
 

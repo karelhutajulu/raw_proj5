@@ -209,7 +209,12 @@ void stu_image_proc(image_proc_args& args) {
             if (mask < 0.2f) mask += 0.22f;
             else mask *= 0.33f;
         }
-        float noise = std::sin(compress_val * 0.11f) * std::cos(rv * 0.22f);
+        float noise_arg1 = compress_val * 0.11f;
+        float noise_arg2 = rv * 0.22f;
+        float s1 = noise_arg1 * (1.0f - noise_arg1 * noise_arg1 * (1.0f / 6.0f));
+        float c2_sq = noise_arg2 * noise_arg2;
+        float c2 = 1.0f - 0.5f * c2_sq + c2_sq * c2_sq * (1.0f / 24.0f);
+        float noise = s1 * c2;
         float final_val = mask * 0.7f + noise * 0.3f;
         if (final_val < 0.0f) final_val = 0.0f;
         if (final_val > 1.0f) final_val = 1.0f;

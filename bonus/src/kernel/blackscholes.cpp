@@ -118,31 +118,64 @@ void naive_BlkSchls(std::vector<float> &CallOptionPrice,
     }
 }
 
+static constexpr float kLn2    = 0.69314718056f;
+static constexpr float kInvLn2 = 1.44269504089f;
+
+__attribute__((always_inline))
+static inline float fast_exp_neg(float x) {
+    if (x < -87.0f) return 0.0f;
+    const int n = static_cast<int>(x * kInvLn2 - 0.5f);
+    const float r = x - static_cast<float>(n) * kLn2;
+    const float p = 1.0f + r * (1.0f + r * (0.5f + r * (0.16666667f +
+                    r * (0.041666667f + r * (0.0083333333f + r * 0.0013888889f)))));
+    if (n < -126) return 0.0f;
+    union { std::uint32_t u; float f; } v;
+    v.u = static_cast<std::uint32_t>(n + 127) << 23;
+    return p * v.f;
+}
+
+static const float sLogC0 = -19.645704f;
+static const float sLogC1 = 0.767002f;
+static const float sLogC2 = 0.3717479f;
+static const float sLogC3 = 5.2653985f;
+static const float sLogC4 = -(1.0f + sLogC0) * (1.0f + sLogC1) /
+                              ((1.0f + sLogC2) * (1.0f + sLogC3));
+static const float sLog2  = 0.6931472f;
+
+__attribute__((always_inline))
+static inline float fast_log(float x) {
+    unsigned int ux = std::bit_cast<unsigned int>(x);
+    int e = static_cast<int>(ux - 0x3f800000) >> 23;
+    ux |= 0x3f800000;
+    ux &= 0x3fffffff;
+    x = std::bit_cast<float>(ux);
+    float a = (x + sLogC0) * (x + sLogC1);
+    float b = (x + sLogC2) * (x + sLogC3);
+    return (static_cast<float>(e) + sLogC4 + a / b) * sLog2;
+}
+
+__attribute__((always_inline))
 static inline float stu_cndf_fast(float x) {
-    // Branchless absolute value + sign tracking
     const bool neg = (x < 0.0f);
     x = std::abs(x);
-
-    // Horner-form polynomial avoids recomputing k^n individually
-    const float k = 1.0f / (1.0f + p_val * x);
-    const float pdf = expf(-0.5f * x * x) * static_cast<float>(inv_sqrt_2xPI);
-
+    const float k = 1.0f / (1.0f + static_cast<float>(p_val) * x);
+    const float pdf = fast_exp_neg(-0.5f * x * x) * static_cast<float>(inv_sqrt_2xPI);
     const float poly = k * (static_cast<float>(coefficient_a1) +
                        k * (static_cast<float>(coefficient_a2) +
                        k * (static_cast<float>(coefficient_a3) +
                        k * (static_cast<float>(coefficient_a4) +
                        k *  static_cast<float>(coefficient_a5)))));
-
     const float cdf = 1.0f - poly * pdf;
     return neg ? (1.0f - cdf) : cdf;
 }
 
+__attribute__((always_inline))
 static inline void stu_BlkSchls_one(float &CallOptionPrice,
                                     float &PutOptionPrice, float spotPrice,
                                     float strike, float rate,
                                     float volatility, float time) {
     const float xSqrtTime    = sqrtf(time);
-    const float xLogTerm     = logf(spotPrice / strike);
+    const float xLogTerm     = fast_log(spotPrice / strike);
     const float xPowerTerm   = 0.5f * volatility * volatility;
     const float xDen         = volatility * xSqrtTime;
     const float invDen       = 1.0f / xDen;
@@ -153,7 +186,7 @@ static inline void stu_BlkSchls_one(float &CallOptionPrice,
     const float NofXd1 = stu_cndf_fast(xD1);
     const float NofXd2 = stu_cndf_fast(xD2);
 
-    const float FutureValueX = strike * expf(-rate * time);
+    const float FutureValueX = strike * fast_exp_neg(-rate * time);
     CallOptionPrice = (spotPrice * NofXd1) - (FutureValueX * NofXd2);
     PutOptionPrice  = (FutureValueX * (1.0f - NofXd2)) - (spotPrice * (1.0f - NofXd1));
 }
