@@ -4,6 +4,8 @@
 #include <cstdint>
 #include <cstdio>
 #include <random>
+#include <thread>
+#include <vector>
 
 #define inv_sqrt_2xPI 0.39894228040143270286
 #define p_val 0.2316419
@@ -116,52 +118,44 @@ void naive_BlkSchls(std::vector<float> &CallOptionPrice,
     }
 }
 
-static inline void stu_CNDF(float InputX, float &OutputX) {
-    int sign = 0;
-    float x = InputX;
-    if (x < 0.0f) {
-        x = -x;
-        sign = 1;
-    }
+static inline float stu_cndf_fast(float x) {
+    // Branchless absolute value + sign tracking
+    const bool neg = (x < 0.0f);
+    x = std::abs(x);
 
-    const float xNPrimeofX = expf(-0.5f * x * x) * inv_sqrt_2xPI;
+    // Horner-form polynomial avoids recomputing k^n individually
     const float k = 1.0f / (1.0f + p_val * x);
-    const float k_2 = k * k;
-    const float k_3 = k_2 * k;
-    const float k_4 = k_3 * k;
-    const float k_5 = k_4 * k;
+    const float pdf = expf(-0.5f * x * x) * static_cast<float>(inv_sqrt_2xPI);
 
-    float local = k * coefficient_a1;
-    local += k_2 * coefficient_a2;
-    local += k_3 * coefficient_a3;
-    local += k_4 * coefficient_a4;
-    local += k_5 * coefficient_a5;
-    local = 1.0f - local * xNPrimeofX;
+    const float poly = k * (static_cast<float>(coefficient_a1) +
+                       k * (static_cast<float>(coefficient_a2) +
+                       k * (static_cast<float>(coefficient_a3) +
+                       k * (static_cast<float>(coefficient_a4) +
+                       k *  static_cast<float>(coefficient_a5)))));
 
-    OutputX = sign ? (1.0f - local) : local;
+    const float cdf = 1.0f - poly * pdf;
+    return neg ? (1.0f - cdf) : cdf;
 }
 
 static inline void stu_BlkSchls_one(float &CallOptionPrice,
                                     float &PutOptionPrice, float spotPrice,
                                     float strike, float rate,
                                     float volatility, float time) {
-    const float xSqrtTime = sqrtf(time);
-    const float xLogTerm = logf(spotPrice / strike);
-    const float xPowerTerm = 0.5f * volatility * volatility;
+    const float xSqrtTime    = sqrtf(time);
+    const float xLogTerm     = logf(spotPrice / strike);
+    const float xPowerTerm   = 0.5f * volatility * volatility;
+    const float xDen         = volatility * xSqrtTime;
+    const float invDen       = 1.0f / xDen;
 
-    float xD1 = (rate + xPowerTerm) * time + xLogTerm;
-    const float xDen = volatility * xSqrtTime;
-    xD1 = xD1 / xDen;
+    const float xD1 = ((rate + xPowerTerm) * time + xLogTerm) * invDen;
     const float xD2 = xD1 - xDen;
 
-    float NofXd1, NofXd2;
-    stu_CNDF(xD1, NofXd1);
-    stu_CNDF(xD2, NofXd2);
+    const float NofXd1 = stu_cndf_fast(xD1);
+    const float NofXd2 = stu_cndf_fast(xD2);
 
     const float FutureValueX = strike * expf(-rate * time);
     CallOptionPrice = (spotPrice * NofXd1) - (FutureValueX * NofXd2);
-
-    PutOptionPrice = (FutureValueX * (1.0f - NofXd2)) - (spotPrice * (1.0f - NofXd1));
+    PutOptionPrice  = (FutureValueX * (1.0f - NofXd2)) - (spotPrice * (1.0f - NofXd1));
 }
 
 void stu_BlkSchls(std::vector<float> &CallOptionPrice,
@@ -171,16 +165,46 @@ void stu_BlkSchls(std::vector<float> &CallOptionPrice,
                   const std::vector<float> &rate,
                   const std::vector<float> &volatility,
                   const std::vector<float> &time) {
-    size_t n = spotPrice.size();
-    for (size_t i = 0; i < n; ++i) {
-        stu_BlkSchls_one(CallOptionPrice[i],
-                         PutOptionPrice[i],
-                         spotPrice[i],
-                         strike[i],
-                         rate[i],
-                         volatility[i],
-                         time[i]);
+    const size_t n = spotPrice.size();
+
+    // Parallelize: each option is fully independent
+    const unsigned int hw = std::thread::hardware_concurrency();
+    const size_t num_threads = (hw == 0) ? 4u : static_cast<size_t>(hw);
+    constexpr size_t MIN_WORK = 512;
+
+    if (n < MIN_WORK || num_threads <= 1) {
+        for (size_t i = 0; i < n; ++i) {
+            stu_BlkSchls_one(CallOptionPrice[i], PutOptionPrice[i],
+                             spotPrice[i], strike[i], rate[i],
+                             volatility[i], time[i]);
+        }
+        return;
     }
+
+    auto worker = [&](size_t begin, size_t end) {
+        for (size_t i = begin; i < end; ++i) {
+            stu_BlkSchls_one(CallOptionPrice[i], PutOptionPrice[i],
+                             spotPrice[i], strike[i], rate[i],
+                             volatility[i], time[i]);
+        }
+    };
+
+    std::vector<std::thread> threads;
+    threads.reserve(num_threads - 1);
+    const size_t chunk = (n + num_threads - 1) / num_threads;
+
+    for (size_t t = 0; t < num_threads; ++t) {
+        const size_t begin = t * chunk;
+        const size_t end   = std::min(n, begin + chunk);
+        if (begin >= end) break;
+        if (t == num_threads - 1) {
+            worker(begin, end); // main thread takes last chunk
+        } else {
+            threads.emplace_back(worker, begin, end);
+        }
+    }
+
+    for (auto &th : threads) th.join();
 }
 
 void naive_BlkSchls_wrapper(void *ctx) {

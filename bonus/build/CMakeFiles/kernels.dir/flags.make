@@ -6,7 +6,7 @@ CXX_DEFINES =
 
 CXX_INCLUDES = -I/Users/karelhutajulu/Downloads/raw_proj5/bonus/include
 
-CXX_FLAGSarm64 = -std=c++23 -arch arm64 -Ofast -Wall -Wextra -march=native -mtune=native -fno-omit-frame-pointer -pthread
+CXX_FLAGSarm64 = -std=c++23 -arch arm64 -O3 -ffast-math -Wall -Wextra -march=native -mtune=native -fno-omit-frame-pointer -pthread
 
-CXX_FLAGS = -std=c++23 -arch arm64 -Ofast -Wall -Wextra -march=native -mtune=native -fno-omit-frame-pointer -pthread
+CXX_FLAGS = -std=c++23 -arch arm64 -O3 -ffast-math -Wall -Wextra -march=native -mtune=native -fno-omit-frame-pointer -pthread
 

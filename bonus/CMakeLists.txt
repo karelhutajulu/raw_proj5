@@ -18,7 +18,7 @@ target_include_directories(kernels
 
 target_compile_options(kernels
     PRIVATE
-        -Ofast -Wall -Wextra -march=native -mtune=native -fno-omit-frame-pointer -pthread
+        -O3 -ffast-math -Wall -Wextra -march=native -mtune=native -fno-omit-frame-pointer -pthread
 )
 
 target_link_libraries(kernels PRIVATE pthread)

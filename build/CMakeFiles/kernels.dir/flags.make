@@ -6,7 +6,7 @@ CXX_DEFINES =
 
 CXX_INCLUDES = -I/Users/karelhutajulu/Downloads/raw_proj5/include
 
-CXX_FLAGSarm64 = -std=c++23 -arch arm64 -ffast-math -O2 -Wall -g -fno-omit-frame-pointer
+CXX_FLAGSarm64 = -std=c++23 -arch arm64 -O3 -ffast-math -march=native -Wall -g -fno-omit-frame-pointer
 
-CXX_FLAGS = -std=c++23 -arch arm64 -ffast-math -O2 -Wall -g -fno-omit-frame-pointer
+CXX_FLAGS = -std=c++23 -arch arm64 -O3 -ffast-math -march=native -Wall -g -fno-omit-frame-pointer
 
