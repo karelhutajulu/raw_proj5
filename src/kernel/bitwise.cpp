@@ -57,41 +57,25 @@ void naive_bitwise(std::span<std::int8_t> result,
 // TODO: Optimize the bitwise function
 void stu_bitwise(std::span<std::int8_t> result, std::span<const std::int8_t> a,
                  std::span<const std::int8_t> b) {
-    constexpr std::uint64_t kMaskLo64 = 0x5A5A5A5A5A5A5A5Aull;
-    constexpr std::uint64_t kMaskHi64 = 0xC3C3C3C3C3C3C3C3ull;
+    // Algebraic simplification: mixed0 ^ mixed1 == 0xA5 ^ ((a|b) & 0x99)
+    constexpr std::uint64_t kA64 = 0xA5A5A5A5A5A5A5A5ull;
+    constexpr std::uint64_t kB64 = 0x9999999999999999ull;
 
     const std::size_t n = std::min({result.size(), a.size(), b.size()});
     std::size_t i = 0;
 
-    // Process 8 elements at a time
     for (; i + 8 <= n; i += 8) {
         std::uint64_t va, vb;
-        std::memcpy(&va, &a[i], sizeof(std::uint64_t));
-        std::memcpy(&vb, &b[i], sizeof(std::uint64_t));
-
-        std::uint64_t shared = va & vb;
-        std::uint64_t either = va | vb;
-        std::uint64_t diff = va ^ vb;
-
-        std::uint64_t mixed0 = (diff & kMaskLo64) | (~shared & ~kMaskLo64);
-        std::uint64_t mixed1 = ((either ^ kMaskHi64) & (shared | ~kMaskHi64)) ^ diff;
-        std::uint64_t res = mixed0 ^ mixed1;
-
-        std::memcpy(&result[i], &res, sizeof(std::uint64_t));
+        std::memcpy(&va, a.data() + i, 8);
+        std::memcpy(&vb, b.data() + i, 8);
+        const std::uint64_t res = kA64 ^ ((va | vb) & kB64);
+        std::memcpy(result.data() + i, &res, 8);
     }
 
-    // Handle remaining elements
-    constexpr std::uint8_t kMaskLo = 0x5Au;
-    constexpr std::uint8_t kMaskHi = 0xC3u;
     for (; i < n; ++i) {
         const auto ua = static_cast<std::uint8_t>(a[i]);
         const auto ub = static_cast<std::uint8_t>(b[i]);
-        const auto shared = static_cast<std::uint8_t>(ua & ub);
-        const auto either = static_cast<std::uint8_t>(ua | ub);
-        const auto diff = static_cast<std::uint8_t>(ua ^ ub);
-        const auto mixed0 = static_cast<std::uint8_t>((diff & kMaskLo) | (~shared & ~kMaskLo));
-        const auto mixed1 = static_cast<std::uint8_t>(((either ^ kMaskHi) & (shared | ~kMaskHi)) ^ diff);
-        result[i] = static_cast<std::int8_t>(mixed0 ^ mixed1);
+        result[i] = static_cast<std::int8_t>(0xA5u ^ ((ua | ub) & 0x99u));
     }
 }
 

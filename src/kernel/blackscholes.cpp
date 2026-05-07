@@ -116,52 +116,78 @@ void naive_BlkSchls(std::vector<float> &CallOptionPrice,
     }
 }
 
-static inline void stu_CNDF(float InputX, float &OutputX) {
-    int sign = 0;
-    float x = InputX;
-    if (x < 0.0f) {
-        x = -x;
-        sign = 1;
-    }
+// Fast exp approximation: range reduction to [-ln2/2, ln2/2] + Horner polynomial
+// Reference: Horner's method https://en.wikipedia.org/wiki/Horner%27s_method
+static constexpr float kLn2   = 0.69314718056f;
+static constexpr float kInvLn2 = 1.44269504089f;
 
-    const float xNPrimeofX = expf(-0.5f * x * x) * inv_sqrt_2xPI;
-    const float k = 1.0f / (1.0f + p_val * x);
-    const float k_2 = k * k;
-    const float k_3 = k_2 * k;
-    const float k_4 = k_3 * k;
-    const float k_5 = k_4 * k;
-
-    float local = k * coefficient_a1;
-    local += k_2 * coefficient_a2;
-    local += k_3 * coefficient_a3;
-    local += k_4 * coefficient_a4;
-    local += k_5 * coefficient_a5;
-    local = 1.0f - local * xNPrimeofX;
-
-    OutputX = sign ? (1.0f - local) : local;
+__attribute__((always_inline))
+static inline float fast_exp_neg(float x) {
+    if (x < -87.0f) return 0.0f;
+    const int n = static_cast<int>(x * kInvLn2 - 0.5f);
+    const float r = x - static_cast<float>(n) * kLn2;
+    const float p = 1.0f + r * (1.0f + r * (0.5f + r * (0.16666667f +
+                    r * (0.041666667f + r * (0.0083333333f + r * 0.0013888889f)))));
+    if (n < -126) return 0.0f;
+    union { std::uint32_t u; float f; } v;
+    v.u = static_cast<std::uint32_t>(n + 127) << 23;
+    return p * v.f;
 }
 
-static inline void stu_BlkSchls_one(float &CallOptionPrice,
-                                    float &PutOptionPrice, float spotPrice,
-                                    float strike, float rate,
-                                    float volatility, float time) {
-    const float xSqrtTime = sqrtf(time);
-    const float xLogTerm = logf(spotPrice / strike);
-    const float xPowerTerm = 0.5f * volatility * volatility;
+// Fast log approximation: extract exponent + rational polynomial
+// Reference: https://stackoverflow.com/questions/39821367
+static const float sLogC0 = -19.645704f;
+static const float sLogC1 = 0.767002f;
+static const float sLogC2 = 0.3717479f;
+static const float sLogC3 = 5.2653985f;
+static const float sLogC4 = -(1.0f + sLogC0) * (1.0f + sLogC1) /
+                              ((1.0f + sLogC2) * (1.0f + sLogC3));
+static const float sLog2  = 0.6931472f;
 
-    float xD1 = (rate + xPowerTerm) * time + xLogTerm;
-    const float xDen = volatility * xSqrtTime;
-    xD1 = xD1 / xDen;
-    const float xD2 = xD1 - xDen;
+__attribute__((always_inline))
+static inline float fast_log(float x) {
+    unsigned int ux = std::bit_cast<unsigned int>(x);
+    int e = static_cast<int>(ux - 0x3f800000) >> 23;
+    ux |= 0x3f800000;
+    ux &= 0x3fffffff;
+    x = std::bit_cast<float>(ux);
+    float a = (x + sLogC0) * (x + sLogC1);
+    float b = (x + sLogC2) * (x + sLogC3);
+    return (static_cast<float>(e) + sLogC4 + a / b) * sLog2;
+}
 
-    float NofXd1, NofXd2;
-    stu_CNDF(xD1, NofXd1);
-    stu_CNDF(xD2, NofXd2);
+// Horner-form CNDF: fewer multiplies than computing k^2..k^5 separately
+__attribute__((always_inline))
+static inline float fast_cndf(float x) {
+    const bool neg = (x < 0.0f);
+    x = std::abs(x);
+    const float k = 1.0f / (1.0f + static_cast<float>(p_val) * x);
+    const float pdf = fast_exp_neg(-0.5f * x * x) * static_cast<float>(inv_sqrt_2xPI);
+    const float poly = k * (static_cast<float>(coefficient_a1) +
+                       k * (static_cast<float>(coefficient_a2) +
+                       k * (static_cast<float>(coefficient_a3) +
+                       k * (static_cast<float>(coefficient_a4) +
+                       k *  static_cast<float>(coefficient_a5)))));
+    const float cdf = 1.0f - poly * pdf;
+    return neg ? (1.0f - cdf) : cdf;
+}
 
-    const float FutureValueX = strike * expf(-rate * time);
-    CallOptionPrice = (spotPrice * NofXd1) - (FutureValueX * NofXd2);
-
-    PutOptionPrice = (FutureValueX * (1.0f - NofXd2)) - (spotPrice * (1.0f - NofXd1));
+__attribute__((always_inline))
+static inline void stu_BlkSchls_one(float &call, float &put,
+                                    float spot, float strike,
+                                    float rate, float vol, float t) {
+    const float sqrtT  = std::sqrt(t);
+    const float logVal = fast_log(spot / strike);
+    const float halfV2 = 0.5f * vol * vol;
+    const float den    = vol * sqrtT;
+    const float invDen = 1.0f / den;
+    const float d1     = ((rate + halfV2) * t + logVal) * invDen;
+    const float d2     = d1 - den;
+    const float Nd1    = fast_cndf(d1);
+    const float Nd2    = fast_cndf(d2);
+    const float disc   = strike * fast_exp_neg(-rate * t);
+    call = spot * Nd1 - disc * Nd2;
+    put  = disc * (1.0f - Nd2) - spot * (1.0f - Nd1);
 }
 
 void stu_BlkSchls(std::vector<float> &CallOptionPrice,
@@ -171,15 +197,17 @@ void stu_BlkSchls(std::vector<float> &CallOptionPrice,
                   const std::vector<float> &rate,
                   const std::vector<float> &volatility,
                   const std::vector<float> &time) {
-    size_t n = spotPrice.size();
+    const size_t n = spotPrice.size();
+    float* __restrict__ call = CallOptionPrice.data();
+    float* __restrict__ put  = PutOptionPrice.data();
+    const float* __restrict__ s = spotPrice.data();
+    const float* __restrict__ k = strike.data();
+    const float* __restrict__ r = rate.data();
+    const float* __restrict__ v = volatility.data();
+    const float* __restrict__ t = time.data();
+
     for (size_t i = 0; i < n; ++i) {
-        stu_BlkSchls_one(CallOptionPrice[i],
-                         PutOptionPrice[i],
-                         spotPrice[i],
-                         strike[i],
-                         rate[i],
-                         volatility[i],
-                         time[i]);
+        stu_BlkSchls_one(call[i], put[i], s[i], k[i], r[i], v[i], t[i]);
     }
 }
 
