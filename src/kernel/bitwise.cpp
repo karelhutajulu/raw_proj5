@@ -57,34 +57,30 @@ void naive_bitwise(std::span<std::int8_t> result,
 // TODO: Optimize the bitwise function
 void stu_bitwise(std::span<std::int8_t> result, std::span<const std::int8_t> a,
                  std::span<const std::int8_t> b) {
-    constexpr std::uint8_t MaskA = 0xA5u;
-    constexpr std::uint8_t MaskB = 0x99u;
-
-    constexpr unsigned __int128 MaskA128 =
-        (static_cast<unsigned __int128>(0xA5A5A5A5A5A5A5A5ull) << 64) |
-         static_cast<unsigned __int128>(0xA5A5A5A5A5A5A5A5ull);
-
-    constexpr unsigned __int128 MaskB128 =
-        (static_cast<unsigned __int128>(0x9999999999999999ull) << 64) |
-         static_cast<unsigned __int128>(0x9999999999999999ull);
-
     const std::size_t n = std::min({result.size(), a.size(), b.size()});
+
+    constexpr std::uint64_t K_CONST = 0x2424242424242424ull;
+    constexpr std::uint64_t K_OR    = 0x1818181818181818ull;
+    constexpr std::uint64_t K_NOR   = 0x8181818181818181ull;
 
     std::size_t i = 0;
 
-    for (; i + 16 <= n; i += 16) {
-        unsigned __int128 va, vb;
-        std::memcpy(&va, a.data() + i, 16);
-        std::memcpy(&vb, b.data() + i, 16);
+    for (; i + 8 <= n; i += 8) {
+        std::uint64_t av, bv;
+        std::memcpy(&av, a.data() + i, sizeof(std::uint64_t));
+        std::memcpy(&bv, b.data() + i, sizeof(std::uint64_t));
 
-        unsigned __int128 res = MaskA128 ^ ((va | vb) & MaskB128);
-        std::memcpy(result.data() + i, &res, 16);
+        const std::uint64_t e = av | bv;
+        std::uint64_t out = K_CONST | (e & K_OR) | ((~e) & K_NOR);
+
+        std::memcpy(result.data() + i, &out, sizeof(std::uint64_t));
     }
 
     for (; i < n; ++i) {
         const auto ua = static_cast<std::uint8_t>(a[i]);
         const auto ub = static_cast<std::uint8_t>(b[i]);
-        result[i] = static_cast<std::int8_t>(MaskA ^ ((ua | ub) & MaskB));
+        const auto e = static_cast<std::uint8_t>(ua | ub);
+        result[i] = static_cast<std::int8_t>(0x24u | (e & 0x18u) | ((~e) & 0x81u));
     }
 }
 
