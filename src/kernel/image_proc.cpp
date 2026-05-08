@@ -172,7 +172,6 @@ void stu_image_proc(image_proc_args& args) {
     const size_t n = w * h;
 
     for (size_t i = 0; i < n; ++i) {
-        // inline color_correct
         float rv = r[i] * 1.05f + 0.02f;
         float gv = g[i] * 1.05f + 0.02f;
         float bv = b[i] * 1.05f + 0.02f;
@@ -180,16 +179,13 @@ void stu_image_proc(image_proc_args& args) {
         if (gv > 1.0f) gv = 1.0f;
         if (bv > 1.0f) bv = 1.0f;
 
-        // inline compute_gray
         float gray = rv * 0.299f + gv * 0.587f + bv * 0.114f;
 
-        // inline enhance_contrast
         float adj = (gray - 0.05f) / 0.90f;
         if (adj < 0.0f) adj = 0.0f;
         if (adj > 1.0f) adj = 1.0f;
         float grayEnhance = adj * adj * (3.0f - 2.0f * adj);
 
-        // inline hdr_compress
         float val = grayEnhance * 1.2f;
         float g1 = val * 0.5f;
         float g2 = g1 * g1 + 0.1f;
@@ -198,7 +194,6 @@ void stu_image_proc(image_proc_args& args) {
         float result = grayEnhance * gain;
         float compress_val = result / (1.0f + result);
 
-        // inline complex_mask_logic
         float mask = 0.0f;
         if (compress_val > threshold) {
             mask = rv * 0.11f + gv * 0.22f - bv * 0.33f + 1.01f;
@@ -219,7 +214,6 @@ void stu_image_proc(image_proc_args& args) {
         if (final_val < 0.0f) final_val = 0.0f;
         if (final_val > 1.0f) final_val = 1.0f;
 
-        // inline importance_weight
         float scaled = final_val * 4.0f;
         int idx = static_cast<int>(scaled);
         if (idx < 0) idx = 0;

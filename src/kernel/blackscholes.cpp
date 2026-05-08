@@ -116,8 +116,7 @@ void naive_BlkSchls(std::vector<float> &CallOptionPrice,
     }
 }
 
-// Fast exp approximation: range reduction to [-ln2/2, ln2/2] + Horner polynomial
-// Reference: Horner's method https://en.wikipedia.org/wiki/Horner%27s_method
+
 static constexpr float kLn2   = 0.69314718056f;
 static constexpr float kInvLn2 = 1.44269504089f;
 
@@ -134,8 +133,7 @@ static inline float fast_exp_neg(float x) {
     return p * v.f;
 }
 
-// Fast log approximation: extract exponent + rational polynomial
-// Reference: https://stackoverflow.com/questions/39821367
+
 static const float sLogC0 = -19.645704f;
 static const float sLogC1 = 0.767002f;
 static const float sLogC2 = 0.3717479f;
@@ -156,7 +154,7 @@ static inline float fast_log(float x) {
     return (static_cast<float>(e) + sLogC4 + a / b) * sLog2;
 }
 
-// Horner-form CNDF: fewer multiplies than computing k^2..k^5 separately
+
 __attribute__((always_inline))
 static inline float fast_cndf(float x) {
     const bool neg = (x < 0.0f);

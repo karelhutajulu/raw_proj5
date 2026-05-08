@@ -1,5 +1,0 @@
-/Users/karelhutajulu/Downloads/raw_proj5/build/CMakeFiles/kernels.dir
-/Users/karelhutajulu/Downloads/raw_proj5/build/CMakeFiles/single_bench.dir
-/Users/karelhutajulu/Downloads/raw_proj5/build/CMakeFiles/run_all.dir
-/Users/karelhutajulu/Downloads/raw_proj5/build/CMakeFiles/edit_cache.dir
-/Users/karelhutajulu/Downloads/raw_proj5/build/CMakeFiles/rebuild_cache.dir

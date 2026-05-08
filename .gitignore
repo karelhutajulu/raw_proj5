@@ -1,0 +1,6 @@
+build/
+build-debug/
+bonus/build/
+*.o
+*.a
+*.DS_Store
