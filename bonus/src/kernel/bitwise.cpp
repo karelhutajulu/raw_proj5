@@ -55,7 +55,7 @@ void naive_bitwise(std::span<std::int8_t> result,
 }
 
 // TODO: Optimize the bitwise function
-typedef std::uint8_t v32u8 __attribute__((vector_size(32), aligned(1)));
+typedef std::uint64_t unaligned_u64 __attribute__((aligned(1), may_alias));
 
 void stu_bitwise(std::span<std::int8_t> result, std::span<const std::int8_t> a,
                  std::span<const std::int8_t> b) {
@@ -66,27 +66,23 @@ void stu_bitwise(std::span<std::int8_t> result, std::span<const std::int8_t> a,
 
     std::size_t i = 0;
     
-    if (n >= 128) {
-        v32u8 mask_A5;
-        v32u8 mask_99;
-        for (int k = 0; k < 32; ++k) {
-            mask_A5[k] = 0xA5u;
-            mask_99[k] = 0x99u;
-        }
-
-        auto* __restrict__ v_dst = reinterpret_cast<v32u8*>(dst);
-        const auto* __restrict__ v_sa = reinterpret_cast<const v32u8*>(sa);
-        const auto* __restrict__ v_sb = reinterpret_cast<const v32u8*>(sb);
+    if (n >= 32) {
+        auto* __restrict__ dst64 = reinterpret_cast<unaligned_u64*>(dst);
+        const auto* __restrict__ sa64 = reinterpret_cast<const unaligned_u64*>(sa);
+        const auto* __restrict__ sb64 = reinterpret_cast<const unaligned_u64*>(sb);
         
-        const std::size_t n128 = n / 128;
-        for (std::size_t j = 0; j < n128; ++j) {
+        constexpr unaligned_u64 m_A5 = 0xA5A5A5A5A5A5A5A5ULL;
+        constexpr unaligned_u64 m_99 = 0x9999999999999999ULL;
+        
+        const std::size_t n32 = n / 32;
+        for (std::size_t j = 0; j < n32; ++j) {
             std::size_t base = j * 4;
-            v_dst[base] = mask_A5 ^ ((v_sa[base] | v_sb[base]) & mask_99);
-            v_dst[base+1] = mask_A5 ^ ((v_sa[base+1] | v_sb[base+1]) & mask_99);
-            v_dst[base+2] = mask_A5 ^ ((v_sa[base+2] | v_sb[base+2]) & mask_99);
-            v_dst[base+3] = mask_A5 ^ ((v_sa[base+3] | v_sb[base+3]) & mask_99);
+            dst64[base] = m_A5 ^ ((sa64[base] | sb64[base]) & m_99);
+            dst64[base+1] = m_A5 ^ ((sa64[base+1] | sb64[base+1]) & m_99);
+            dst64[base+2] = m_A5 ^ ((sa64[base+2] | sb64[base+2]) & m_99);
+            dst64[base+3] = m_A5 ^ ((sa64[base+3] | sb64[base+3]) & m_99);
         }
-        i = n128 * 128;
+        i = n32 * 32;
     }
 
     for (; i < n; ++i) {
