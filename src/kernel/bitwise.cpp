@@ -62,9 +62,22 @@ void stu_bitwise(std::span<std::int8_t> result, std::span<const std::int8_t> a,
     const auto* __restrict__ sa = reinterpret_cast<const std::uint8_t*>(a.data());
     const auto* __restrict__ sb = reinterpret_cast<const std::uint8_t*>(b.data());
 
-    for (std::size_t i = 0; i < n; ++i) {
-        const std::uint8_t e = sa[i] | sb[i];
-        dst[i] = 0x24u | (e & 0x18u) | ((~e) & 0x81u);
+    constexpr std::uint64_t MASK_A = 0xA5A5A5A5A5A5A5A5ull;
+    constexpr std::uint64_t MASK_B = 0x9999999999999999ull;
+
+    std::size_t i = 0;
+    for (; i + 8 <= n; i += 8) {
+        std::uint64_t va, vb;
+        std::memcpy(&va, sa + i, 8);
+        std::memcpy(&vb, sb + i, 8);
+        
+        std::uint64_t e = va | vb;
+        std::uint64_t res = MASK_A ^ (e & MASK_B);
+        std::memcpy(dst + i, &res, 8);
+    }
+
+    for (; i < n; ++i) {
+        dst[i] = 0xA5u ^ ((sa[i] | sb[i]) & 0x99u);
     }
 }
 
