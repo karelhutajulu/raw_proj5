@@ -6,24 +6,31 @@
 #include <vector>
 
 #include "bench.h"
-#include "relu.h"
-
+#include "bitwise.h"
 
 int main() {
     std::uint32_t seed = 12345u;
-    constexpr size_t relu_size = 1024000;
-    relu_args relu_args_naive;
-    initialize_relu(&relu_args_naive, relu_size, seed);
-    std::println("\tReLU: vector length={}", relu_size);
+    constexpr size_t bitwise_size = 1024000;
+    bitwise_args bitwise_args_naive, bitwise_args_stu;
+    initialize_bitwise(&bitwise_args_naive, bitwise_size, seed);
+    initialize_bitwise(&bitwise_args_stu, bitwise_size, seed);
+    std::println("\tBitwise: vector length={}", bitwise_size);
 
     std::vector<bench_t> benchmarks = {
-                {"ReLU (Naive)",
-                 naive_relu_wrapper,
-                 naive_relu_wrapper,
-                 relu_check,
-                 &relu_args_naive,
-                 &relu_args_naive,
-                 BASELINE_RELU},
+                {"Bitwise (Naive)",
+                 naive_bitwise_wrapper,
+                 naive_bitwise_wrapper,
+                 bitwise_check,
+                 &bitwise_args_naive,
+                 &bitwise_args_naive,
+                 BASELINE_BITWISE},
+                {"Bitwise (Student)",
+                 stu_bitwise_wrapper,
+                 naive_bitwise_wrapper,
+                 bitwise_check,
+                 &bitwise_args_stu,
+                 &bitwise_args_naive,
+                 BASELINE_BITWISE},
     };
     std::cout << "\nRunning Benchmarks...\n";
     std::cout << "--------------------------------------------------------\n";
