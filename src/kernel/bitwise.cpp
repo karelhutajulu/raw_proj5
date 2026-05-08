@@ -58,29 +58,13 @@ void naive_bitwise(std::span<std::int8_t> result,
 void stu_bitwise(std::span<std::int8_t> result, std::span<const std::int8_t> a,
                  std::span<const std::int8_t> b) {
     const std::size_t n = std::min({result.size(), a.size(), b.size()});
+    auto* __restrict__ dst = reinterpret_cast<std::uint8_t*>(result.data());
+    const auto* __restrict__ sa = reinterpret_cast<const std::uint8_t*>(a.data());
+    const auto* __restrict__ sb = reinterpret_cast<const std::uint8_t*>(b.data());
 
-    constexpr std::uint64_t K_CONST = 0x2424242424242424ull;
-    constexpr std::uint64_t K_OR    = 0x1818181818181818ull;
-    constexpr std::uint64_t K_NOR   = 0x8181818181818181ull;
-
-    std::size_t i = 0;
-
-    for (; i + 8 <= n; i += 8) {
-        std::uint64_t av, bv;
-        std::memcpy(&av, a.data() + i, sizeof(std::uint64_t));
-        std::memcpy(&bv, b.data() + i, sizeof(std::uint64_t));
-
-        const std::uint64_t e = av | bv;
-        std::uint64_t out = K_CONST | (e & K_OR) | ((~e) & K_NOR);
-
-        std::memcpy(result.data() + i, &out, sizeof(std::uint64_t));
-    }
-
-    for (; i < n; ++i) {
-        const auto ua = static_cast<std::uint8_t>(a[i]);
-        const auto ub = static_cast<std::uint8_t>(b[i]);
-        const auto e = static_cast<std::uint8_t>(ua | ub);
-        result[i] = static_cast<std::int8_t>(0x24u | (e & 0x18u) | ((~e) & 0x81u));
+    for (std::size_t i = 0; i < n; ++i) {
+        const std::uint8_t e = sa[i] | sb[i];
+        dst[i] = 0x24u | (e & 0x18u) | ((~e) & 0x81u);
     }
 }
 
