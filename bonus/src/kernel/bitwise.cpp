@@ -55,6 +55,8 @@ void naive_bitwise(std::span<std::int8_t> result,
 }
 
 // TODO: Optimize the bitwise function
+typedef std::uint8_t v32u8 __attribute__((vector_size(32), aligned(1)));
+
 void stu_bitwise(std::span<std::int8_t> result, std::span<const std::int8_t> a,
                  std::span<const std::int8_t> b) {
     const std::size_t n = std::min({result.size(), a.size(), b.size()});
@@ -62,7 +64,32 @@ void stu_bitwise(std::span<std::int8_t> result, std::span<const std::int8_t> a,
     const auto* __restrict__ sa = reinterpret_cast<const std::uint8_t*>(a.data());
     const auto* __restrict__ sb = reinterpret_cast<const std::uint8_t*>(b.data());
 
-    for (std::size_t i = 0; i < n; ++i) {
+    std::size_t i = 0;
+    
+    if (n >= 128) {
+        v32u8 mask_A5;
+        v32u8 mask_99;
+        for (int k = 0; k < 32; ++k) {
+            mask_A5[k] = 0xA5u;
+            mask_99[k] = 0x99u;
+        }
+
+        auto* __restrict__ v_dst = reinterpret_cast<v32u8*>(dst);
+        const auto* __restrict__ v_sa = reinterpret_cast<const v32u8*>(sa);
+        const auto* __restrict__ v_sb = reinterpret_cast<const v32u8*>(sb);
+        
+        const std::size_t n128 = n / 128;
+        for (std::size_t j = 0; j < n128; ++j) {
+            std::size_t base = j * 4;
+            v_dst[base] = mask_A5 ^ ((v_sa[base] | v_sb[base]) & mask_99);
+            v_dst[base+1] = mask_A5 ^ ((v_sa[base+1] | v_sb[base+1]) & mask_99);
+            v_dst[base+2] = mask_A5 ^ ((v_sa[base+2] | v_sb[base+2]) & mask_99);
+            v_dst[base+3] = mask_A5 ^ ((v_sa[base+3] | v_sb[base+3]) & mask_99);
+        }
+        i = n128 * 128;
+    }
+
+    for (; i < n; ++i) {
         dst[i] = 0xA5u ^ ((sa[i] | sb[i]) & 0x99u);
     }
 }
